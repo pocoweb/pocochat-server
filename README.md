@@ -43,6 +43,14 @@ $ mongodb-runner start
 $ npm start
 ```
 
+## Test
+
+Registration, Login, Chat
+
+```
+open http://localhost:1337/public/chat.html
+```
+
 ## Debug
 
 ## Deploy
