@@ -1,0 +1,100 @@
+#mainDiv {
+	/* Center & Size */
+	width: 700px;
+	margin-left: auto;
+	margin-right: auto;
+	overflow: auto;
+
+	/* Colour and border */
+	background-color: #CCCCFF;
+	border-color: #9999FF;
+	border-radius: 25px;
+	border-style: solid;
+	border-width: 2px;
+
+	/* Font */
+	font-family: sans-serif;
+	font-size: 16px;
+	color: white;
+}
+
+#userform {
+	padding-left: 10px;
+	padding-top: 10px;
+}
+
+#loginButton {
+	padding-left: 1.5em;
+	padding-right: 1.5em;
+}
+
+#showRegisterForm {
+	padding-left: 1em;
+	padding-right: 1em;
+}
+
+#introDiv {
+	padding-left: 10px;
+}
+
+#registerDiv {
+	margin: auto 0;
+	color: white;
+	width: 500px;
+	height: 400px;
+	padding-left: 20px;
+}
+
+#credentials {
+	width: 200px;
+	height: 200px;
+}
+
+#messageDiv {
+	height: 500px;
+}
+
+#chatbox {
+	text-align: left;
+	background: #fff;
+	height: 410px;
+	width: 680px;
+	border: 1px solid #9999FF;
+	overflow: auto;
+	margin-left: 10px;
+	margin-top: 10px;
+}
+
+#usermsg {
+	margin-top: 10px;
+	margin-left: 10px;
+	width: 630px;
+}
+
+#logoutButton {
+	float: right;
+	margin-right: 10px;
+	margin-top: 10px;
+}
+
+#username {
+	margin-left: 10px;
+	padding-top: 10px;
+}
+
+.chatText {
+	font: 12px arial;
+	color: #222;
+	margin: 2px 2px 2px 2px;
+	word-wrap: break-word;
+	width: 660px;
+
+}
+
+b {
+	color: blue;
+}
+
+a {
+	text-decoration: none;
+}

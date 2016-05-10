@@ -1,0 +1,60 @@
+<html>
+<head>
+	<title>Parse API Powered chat</title>
+	<link rel="stylesheet" type="text/css" href="assets/css/style.css">
+	<script src="//cdn.bootcss.com/jquery/2.2.3/jquery.slim.min.js"></script>
+	<script language="javascript" type="text/javascript" src="assets/js/parse-latest.js"></script>
+	<script language="javascript" type="text/javascript" src="assets/js/chat.js">
+	</script>
+
+
+</head>
+
+<body>
+<div id="mainDiv">
+
+	<!-- Login Form -->
+
+	<div id="userform">
+		<label>Username: </label>
+		<input type="text" placeholder="Ex. user123" id="usernameField">
+		<label>Password: </label>
+		<input type="password" placeholder="***********" maxlength="14" id="passwordField">
+		<button type="button" id="loginButton">Login</button>
+		<button type="button" id="showRegisterForm">Register</button>
+	</div>
+
+	<!-- Intro information -->
+
+	<div id="introDiv">
+	<h1> About this project </h1>
+	<h3>This project is a simple javascript based multi-user chat which utilizes several JavaScript APIs to maximize potential and minimize effort.</h3><h3> The <a href="https://parse.com/">Parse API</a> provides a simple, secure and efficient backend solution to hold all of the data necessary to make this application such as usernames, passwords and the messages being sent by users.</h3><h3>The <a href="http://jquery.com/">jQuery API</a> allows us to provide the user with a clean and easy to use interface while writing a considerable less amount of code than by using native libraries.</h3><h3>The text editor used to produce and manage all project files is <a href="http://www.sublimetext.com/">Sublime Text 3</a>.</h3>
+	</div>
+
+	<!-- Chatbox area (User logged in) -->
+
+	<div id="messagediv" hidden="yes">
+		<label id="username" style="display:inline-block"></label>
+		<button type="button" id="logoutButton">Logout</button>
+		<div id="chatbox"></div>
+		<input type="text" id="usermsg">
+		<button type="button" id="sendmsg">Send</button>
+	</div>
+
+	<!-- Registration form -->
+
+	<div id="registerDiv" hidden="yes">
+		<h1> Parse API Chat Register form </h1>
+		<div id="credentials">
+		<label>Username: </label>
+		<input type="text" id="regUsername" placeholder="Ex. User123">
+		<label>Password: </label>
+		<input type="password" id="regPassword" placeholder="***********" maxlength="14">
+		<button type="button" id="registerButton">Register</button>
+		<button type="button" id="cancel">Cancel</button>
+		</div>
+	</div>
+
+</div>
+</body>
+</html>
