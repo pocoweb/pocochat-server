@@ -14,12 +14,18 @@ if (!databaseUri) {
 var api = new ParseServer({
   databaseURI: databaseUri || 'mongodb://localhost:27017/dev',
   cloud: process.env.CLOUD_CODE_MAIN || __dirname + '/cloud/main.js',
-  appId: process.env.APP_ID || 'myAppId',
-  masterKey: process.env.MASTER_KEY || '', //Add your master key here. Keep it secret!
+
+  appId: process.env.APPLICATION_ID || 'myAppId',
+  masterKey: process.env.REST_API_KEY || '', //Add your master key here. Keep it secret!
   serverURL: process.env.SERVER_URL || 'http://localhost:1337/parse',  // Don't forget to change to https if needed
   liveQuery: {
-    classNames: ["Posts", "Comments"] // List of classes to support for query subscriptions
-  }
+    classNames: ["Messages", "Posts", "Comments"], // List of classes to support for query subscriptions
+    //redisURL: 'redis://127.0.0.1:6379'  // to go with LiveQueryServer
+  },
+
+  websocketTimeout: 10 * 1000,
+  cacheTimeout: 60 * 600 * 1000,
+  logLevel: 'VERBOSE'
 });
 // Client-keys like the javascript key or the .NET key are not necessary with parse-server
 // If you wish you require them, you can set them as options in the initialization above:
@@ -52,4 +58,6 @@ httpServer.listen(port, function() {
 });
 
 // This will enable the Live Query real-time server
-ParseServer.createLiveQueryServer(httpServer);
+ParseServer.createLiveQueryServer(httpServer, {
+    //redisURL: 'redis://127.0.0.1:6379'  // to go with LiveQueryServer
+});
