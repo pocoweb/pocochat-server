@@ -47,7 +47,7 @@ function appendResults(results) {
     for (var i = 0; i < results.length; i++) {
         var object = results[i];
         var timeString = "(" + object.createdAt.getHours() + ":" + object.createdAt.getMinutes() + ")";
-        $("#chatbox").append("<div class=\"chatText\">" + timeString + " <b>" + object.get("sendUser") + ": </b>" + object.get("message") + "</div>");
+        $("#chatbox").append("<div class=\"chatText\">" + timeString + " <b>" + object.get("sendFrom").get('username') + ": </b>" + object.get("text") + "</div>");
     }
 
     if (results.length != 0)
@@ -80,7 +80,7 @@ function appendResults(results) {
 
 
 $(document).ready(function() {
-    Parse.initialize("pocowebparse", "XoHirs3LE7PhOYiR");
+    Parse.initialize("pocoweb-chat", "XoHirs3LE7PhOYiR");
     Parse.serverURL = 'http://localhost:1337/parse';
 
     currentUser = Parse.User.current();
@@ -140,9 +140,9 @@ $(document).ready(function() {
     $("#logoutButton").click(attemptLogout);
 
     $("#sendmsg").click(function() {
-        var message = $("#usermsg").val().toString();
+        var text = $("#usermsg").val().toString();
         var messageObject = new Messages();
-        messageObject.save({message: message, sendUser:currentUser.get("username")}).then(function(object) {
+        messageObject.save({text: text, sendFrom:currentUser}).then(function(object) {
             $("#usermsg").val("");
         });
     });
@@ -162,7 +162,7 @@ $(document).ready(function() {
     $.subscription.on('create', function(message){
         appendResults([message]);
 
-        console.log(message.get('message')); // This should output Mengyan
+        console.log(message.get('text')); // This should output Mengyan
     });
 
     // subscription.on('update', (people) => {
