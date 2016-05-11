@@ -26,15 +26,8 @@ $ npm install
 
 The following variable could be recoganized from the shell environment.
 
-```
-DATABASE_URI or MONGODB_URI  # default 'mongodb://localhost:27017/dev'
-CLOUD_CODE_MAIN  # default __dirname + '/cloud/main.js'
-APPLICATION_ID  # default myAppId
-REST_API_KEY  # Your master key and keep it secret
-SERVER_URL  # 'http://localhost:1337/parse'
-PARSE_MOUNT  # default /parse
-PORT  # default 1337
-```
+`cp env_template .env` will do the local trick for you.
+
 
 ## Run
 

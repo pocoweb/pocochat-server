@@ -1,0 +1,12 @@
+# cp env_template .env to be loaded by default.
+
+#DATABASE_URI='mongodb://localhost:27017/dev'
+#CLOUD_CODE_MAIN='./cloud/main.js'
+
+#APPLICATION_ID='pocoweb-chat'
+#SERVER_URL='http://localhost:1337/parse'
+#PARSE_MOUNT='/parse'
+#PORT='1337'
+
+# Master key and keep it secret
+#REST_API_KEY='KEEP_IT_SECRET'
