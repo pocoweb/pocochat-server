@@ -10,7 +10,22 @@ And all the information in README_original.md should be still valid.
 ```
 $ npm install -g parse-server mongodb-runner
 $ mongodb-runner start
-$ parse-server --appId APPLICATION_ID --masterKey MASTER_KEY
+```
+
+Because we enabled LiveQuery in pocoweb-chat-server, so default `npm` installed `parse-server` will not work with Web Socket.
+
+So firstly make the dotenv available. 
+
+```
+cp env_template .env
+```
+
+Secondly, uncomment variables you want to change, expecially `APPLICATION_ID` and `REST_API_KEY`.
+
+Then, run the server:
+
+```
+$ npm start
 ```
 
 ## Install
