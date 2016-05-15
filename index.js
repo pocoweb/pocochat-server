@@ -5,6 +5,7 @@ require('dotenv').config();
 console.log(process.env);
 
 var express = require('express');
+var oauthshim = require('oauth-shim');
 var ParseServer = require('parse-server').ParseServer;
 var path = require('path');
 
@@ -28,7 +29,8 @@ var api = new ParseServer({
 
   websocketTimeout: 10 * 1000,
   cacheTimeout: 60 * 600 * 1000,
-  logLevel: 'VERBOSE'
+  logLevel: 'VERBOSE',
+
 });
 // Client-keys like the javascript key or the .NET key are not necessary with parse-server
 // If you wish you require them, you can set them as options in the initialization above:
@@ -53,6 +55,21 @@ app.get('/', function(req, res) {
 app.get('/test', function(req, res) {
   res.sendFile(path.join(__dirname, '/public/test.html'));
 });
+
+app.all('/oauthproxy', oauthshim);
+ 
+// Initiate the shim with Client ID's and secret, e.g. 
+oauthshim.init([{
+  // id : secret 
+  client_id: '90b3f6ed4f34d5c8d1cf',
+  client_secret: 'addbad5b3f5b9def6607e3872f56d366cf16cdde',
+  // Define the grant_url where to exchange Authorisation codes for tokens 
+  grant_url: 'https://github.com/login/oauth/access_token',
+  // Restrict the callback URL to a delimited list of callback paths 
+  domain: 'localhost:8080, localhost:1337'
+}
+]);
+
 
 var port = process.env.PORT || 1337;
 var httpServer = require('http').createServer(app);

@@ -12,6 +12,7 @@
     "dotenv": "^2.0.0",
     "express": "~4.11.x",
     "kerberos": "~0.0.x",
+    "oauth-shim": "^1.1.0",
     "parse": "~1.8.0",
     "parse-server": "~2.2.2"
   },
