@@ -61,4 +61,9 @@ open http://localhost:1337/public/chat.html
 
 ## Debug
 
+To test on localhost, you should set as follows:
+1. Regist default users: AI and Group
+2. Replace getAIId() and getGroupId() in store.js@Pocoweb-chat with your local ObjectId AI and Group, you can check them on your local parse-dashboard
+3. Replace KEY_AI_ID and KEY_AI_GROUP in cloud/main.js with your local ObjectId
+
 ## Deploy
