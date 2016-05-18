@@ -1,17 +1,27 @@
-
-const KEY_AI_ID = 'PhU3ki2QQV';
-const KEY_GROUP_ID = '7SDMDWUPFh';
-
-//local test
-//const KEY_AI_ID = '1E5T8KLWbF';
-//const KEY_GROUP_ID = 'qjm7IQwids';
-
+var Storage = require('./store');
 var LUISMgr = require('./ai');
 var ParseSession = Parse.Object.extend('Messages');
 
 var L_USE_KUE = false;
 
-if (L_USE_KUE) {
+if (!L_USE_KUE) {
+	
+	Parse.Cloud.afterSave("Messages", function(request) {
+		if (request.object.get('to') === Storage.getAIId()) {
+			LUISMgr.requestAsync({
+				job: {
+					from: request.object.get('from'),
+					to: request.object.get('to'),
+					msg: request.object.get('msg'),
+				},
+				callback: function(result) {
+					Storage.sendMessage(this.job.to, this.job.from, result.text);
+				}
+			});
+		}
+	});
+	
+} else {
 	var kue = require('kue');
 	var queue = kue.createQueue();
 
@@ -28,56 +38,21 @@ if (L_USE_KUE) {
 		});
 	});
 
-	queue.process('ai', function(job, done){
+	queue.process('PocoChatAI', function(job, done){
 		console.log('process job %s', job.id);
 		LUISMgr.request({
 			job: job,
 			done: done,
-			text: job.data.msg,
 			callback: function(result) {
-				var session = new ParseSession();
-				session.save({
-					from: this.job.data.to,
-					to: this.job.data.from,
-					msg: result.text
-				}, {
-					success: function(data) {
-						console.log('send session ok', data);
-					},
-					error: function(data, error) {
-						console.log('send session ng, with error code: ' + error.description);
-					}
-				});
+				Storage.sendMessage(this.job.to, this.job.from, result.text);
 				this.done();
 			}
 		});
 	});
-
-	function processAIRequest(job) {
-		LUISMgr.requestAsync({
-			job: job,
-			text: job.msg,
-			callback: function(result) {
-				var session = new ParseSession();
-				session.save({
-					from: this.job.to,
-					to: this.job.from,
-					msg: result.text
-				}, {
-					success: function(data) {
-						console.log('send session ok', data);
-					},
-					error: function(data, error) {
-						console.log('send session ng, with error code: ' + error.description);
-					}
-				});
-			}
-		});
-	}
 	
 	Parse.Cloud.afterSave("Messages", function(request) {
-		if (request.object.get('to') === KEY_AI_ID) {
-			var job = queue.create('ai', {
+		if (request.object.get('to') === Storage.getAIId()) {
+			var job = queue.create('PocoChatAI', {
 				from: request.object.get('from'),
 				to: request.object.get('to'),
 				msg: request.object.get('msg')
@@ -87,16 +62,5 @@ if (L_USE_KUE) {
 		}
 	});
 	
-} else { // is use kue
-	
-	Parse.Cloud.afterSave("Messages", function(request) {
-		if (request.object.get('to') === KEY_AI_ID) {
-			processAIRequest({
-				from: request.object.get('from'),
-				to: request.object.get('to'),
-				msg: request.object.get('msg')			
-			});
-		}
-	});
-}
+} 
 

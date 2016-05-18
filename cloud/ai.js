@@ -1,8 +1,6 @@
-//const URL_BING = 'https://bingapis.azure-api.net/api/v5/search/?q=';
-
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 // common functions
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 var request = require('request');
 var sync = require('simplesync');
 var xmlParseString = require('xml2js').parseString;
@@ -58,10 +56,15 @@ function chinese2Gb2312(data) {
 	return gb2312Hex;
 }
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 // LUIS functions
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 const URL_LUIS = 'https://api.projectoxford.ai/luis/v1/application?id=c27c4af7-d44a-436f-a081-841bb834fa29&subscription-key=853fd10078354e6a9ba12facbb850996&q=';
+
+//const URL_LUIS = 'https://api.projectoxford.ai/luis/v1/application?id=94027f50-2ec8-460c-b702-2f239ff98cb6&subscription-key=853fd10078354e6a9ba12facbb850996&q=';
+
+const URL_NEWS = 'https://bingapis.azure-api.net/api/v5/news/?mkt=zh-cn&count=10';
+const PARAM_NEWS_CATG = '&Category=';
 
 const URL_WEATHER = 'http://php.weather.sina.com.cn/xml.php?password=DJOYnieT8234jlsK';
 
@@ -87,10 +90,10 @@ const INTENT_NONE = 'builtin.intent.none';
 var LUISMgr = {
 	requestAsync: function(params) {
 		console.log('requestAsync', params);
-		sendRequest(encodeURI(URL_LUIS+params.text), this.parseCB, params);
+		sendRequest(encodeURI(URL_LUIS+params.job.msg), this.parseCB, params);
 	},
 	request: function(params) {
-		var text = params.text;
+		var text = params.job.msg;
 		console.log('LUIS request: ', text);
 		sync.block(function() {
 			var result = sync.wait(sendRequest(encodeURI(URL_LUIS+text), sync.cb("body")));
@@ -98,6 +101,7 @@ var LUISMgr = {
 		});
 	},
 	parseCB: function(data, params) {
+		console.log('parseCB', data);
 		data = JSON.parse(data);
 		var resData = {
 			text: ''
@@ -106,8 +110,26 @@ var LUISMgr = {
 		sync.block(function() {
 			var intent = LUISMgr.parseIntents(data);
 			if (intent === INTENT_NONE) {
-				console.log('none');
-				resData.text = '对不起，我不太明白您的意思';
+				var reqType = LUISMgr.parseNewsIntent(data);
+				if (reqType.isNews) {
+					var url = URL_NEWS;
+					if (reqType.category != null) {
+						url += PARAM_NEWS_CATG;
+						url += reqType.category;
+					}
+					var options = {
+						url: url,
+						headers: {
+							'Ocp-Apim-Subscription-Key': '4128a206b0fe4296a802a88fd937c865'
+						}
+					};
+					var result = sync.wait(sendRequest(options, sync.cb("body")));
+					resData.text = LUISMgr.parseNewsResp(result.body);
+					
+				} else {
+					console.log('none');
+					resData.text = '对不起，我不太明白您的意思';	
+				}
 
 			} else if (intent === INTENT_WEATHER || intent == INTENT_WEATHER_FACTS) {
 				console.log('weather');
@@ -150,6 +172,58 @@ var LUISMgr = {
 	parseIntents: function(data) {
 		//for demo, only support one intent
 		return data.intents[0].intent;
+	},
+	parseNewsIntent: function(data) {
+		var reqType = {
+			isNews: false,
+			category: null
+		}
+		if( data.query.indexOf("新闻") >= 0 ) {
+			reqType.isNews = true;
+			
+			if (data.query.indexOf("娱乐") >= 0) {
+				reqType.category = 'Entertainment';
+			} else if (data.query.indexOf("商业") >= 0 
+								 || data.query.indexOf("商务") >= 0 
+								 || data.query.indexOf("经济") >= 0) {
+				reqType.category = 'Business';
+			} else if (data.query.indexOf("政治") >= 0) {
+				reqType.category = 'Politics';
+			} else if (data.query.indexOf("科技") >= 0
+								|| data.query.indexOf("技术") >= 0
+								|| data.query.indexOf("科学") >= 0) {
+				reqType.category = 'ScienceAndTechnology';
+			} else if (data.query.indexOf("体育") >= 0) {
+				reqType.category = 'Sports';
+			} else if (data.query.indexOf("国际") >= 0) {
+				reqType.category = 'World';
+			} 
+		}
+		return reqType;
+	},
+	parseNewsResp: function(data) {
+		data = JSON.parse(data);
+		/*
+		var ret = {
+			type: 'news',
+			infos: []
+		};
+		for (var i=0; i<data.value.length; i++) {
+			var item = data.value[i];
+			ret.infos.push({
+				name: item.name,
+				url: item.url,
+				datePublished: item.datePublished
+			});
+		}
+		return JSON.stringify(ret);
+		*/
+		
+		var ret = '';
+		for (var i=0; i<data.value.length; i++) {
+			ret += (i+1) + '. ' + data.value[i].name + '; ';
+		}
+		return ret;
 	},
 	parseWeather: function(data) {
 		var reqType = {
@@ -250,16 +324,23 @@ var LUISMgr = {
 }
 
 var TodoList = {
-	data: {	
+	data: {
+		todos: []
 	},
-	addTodo(date) {
-		
+	addTodo(mission) {
+		mission.done = false;
+		this.data.todos.push(mission);
+	},
+	process() {
+		for (var i=0; i<this.todos.length; i++) {
+			
+		}
 	}
 }
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 // main
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 //var result = null;
 //LUISMgr.request('明天北京的天气怎么样');
 //LUISMgr.request('告诉孙立文，明天上午九点到十一点开会');
@@ -267,7 +348,7 @@ var TodoList = {
 //LUISMgr.request('今天有什么体育新闻？');
 //console.log(result);
 
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 // export
-///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 module.exports = LUISMgr;
