@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////
 // common functions
 ////////////////////////////////////////////////////////////////
+var Storage = require('./store');
 var request = require('request');
 var sync = require('simplesync');
 var xmlParseString = require('xml2js').parseString;
@@ -23,6 +24,12 @@ function Trim(str, is_global) {
 
 function TrimAll(str) {
 	return str.replace(/\s/g, "");
+}
+
+function GetTimeStr(date) {
+	var str = (date.getMonth()+1) + '月' + date.getDate() + '日 ' + date.getHours() + ':';
+	str += (date.getMinutes() > 9) ? date.getMinutes() : ('0'+date.getMinutes());
+	return str;
 }
 
 ////////////////////////////////////////////////////
@@ -75,6 +82,7 @@ const TYPE_WEATHER_LOCA = 'builtin.weather.absolute_location';
 
 const INTENT_ALARM = 'builtin.intent.alarm.set_alarm';
 const INTENT_CALENDAR = 'builtin.intent.calendar.create_calendar_entry';
+const INTENT_CALENDAR_CHECK = 'builtin.intent.calendar.check_availability';
 const TYPE_CONTACT = 'builtin.calendar.contact_name';
 const TYPE_STARTDATE = 'builtin.calendar.start_date';
 const TYPE_STARTTIME = 'builtin.calendar.start_time';
@@ -130,6 +138,7 @@ var LUISMgr = {
 					console.log('none');
 					resData.text = '对不起，我不太明白您的意思';	
 				}
+				params.callback(resData);
 
 			} else if (intent === INTENT_WEATHER || intent == INTENT_WEATHER_FACTS) {
 				console.log('weather');
@@ -148,25 +157,23 @@ var LUISMgr = {
 					result = sync.wait(xmlParseString(result.body, sync.cb("err", "json")));
 					resData.text = LUISMgr.parseWeatherXML(result.json);
 				}
+				params.callback(resData);
 
-			} else if (intent === INTENT_ALARM || intent == INTENT_CALENDAR) {
+			} else if (intent === INTENT_ALARM || intent == INTENT_CALENDAR || intent === INTENT_CALENDAR_CHECK) {
 				console.log('set alarm');
-				var reqType = LUISMgr.parseAlarm(data);
-				console.log('reqType', reqType);
-				resData.text = '收到指令';
+				LUISMgr.parseAlarm(params, data);
 				
 			} else if (intent === INTENT_SEND) {
 				console.log('send message');
-				var reqType = LUISMgr.parseSendMessage(data);
-				resData.text = '收到指令';
+				LUISMgr.parseSendMessage(params, data);
 				
 			} else {
 				console.log('unknown');
 				resData.text = '对不起，这个功能暂时还没有开放';
+				params.callback(resData);
 			}
 			console.log('resData', resData);
-			
-			params.callback(resData);
+
 		});
 	},
 	parseIntents: function(data) {
@@ -248,24 +255,28 @@ var LUISMgr = {
 		return reqType;
 	},
 	parseWeatherXML: function(result) {
-		var info = result.Profiles.Weather[0];
-		var text = info.city[0];
-		text = text + ',' + info.savedate_weather[0];
-		text = text + ',' + info.status1[0];
-		if (info.status1[0] != info.status2[0]) {
-			text = text + '到' + info.status2[0];
+		if (result.Profiles.Weather !== undefined && result.Profiles.Weather.length > 0) {
+			var info = result.Profiles.Weather[0];
+			var text = info.city[0];
+			text = text + ',' + info.savedate_weather[0];
+			text = text + ',' + info.status1[0];
+			if (info.status1[0] != info.status2[0]) {
+				text = text + '到' + info.status2[0];
+			}
+			text = text + ',' + info.direction1[0];
+			text = text + ',' + info.power1[0] + '级';
+			text = text + ',' + info.temperature1[0];
+			text = text + '到' + info.temperature2[0] + '度';
+			if (info.chy_shuoming[0] != '') {
+				text = text + ',穿衣指数: ' + info.chy_shuoming[0];
+			}
+			text = text + ',更新时间' + info.udatetime[0];
+		} else {
+			text = '不好意思，暂时还没有这个的天气信息';
 		}
-		text = text + ',' + info.direction1[0];
-		text = text + ',' + info.power1[0] + '级';
-		text = text + ',' + info.temperature1[0];
-		text = text + '到' + info.temperature2[0] + '度';
-		if (info.chy_shuoming[0] != '') {
-			text = text + ',穿衣指数: ' + info.chy_shuoming[0];
-		}
-		text = text + ',更新时间' + info.udatetime[0];
 		return text;
 	},
-	parseAlarm: function(data) {
+	parseAlarm: function(params, data) {
 		var reqType = {
 			title: null,
 			contact: null,
@@ -296,16 +307,21 @@ var LUISMgr = {
 				
 			} else if (item.type == TYPE_TITLE) {
 				reqType.title = TrimAll(item.entity);
-				
 			}
 		}
 		
-		if (reqType.title == null) {
+		if (reqType.title === null) {
 			reqType.title = data.query;
+		}
+		if (reqType.contact !== null) {
+			TodoList.addTodo(reqType);
+			this.transMessage(params, reqType, true);
+		} else {
+			params.callback({text: '对不起，这个功能暂时还没有开放'});
 		}
 		return reqType;
 	},
-	parseSendMessage: function(data) {
+	parseSendMessage: function(params, data) {
 		var reqType = {
 			contact: null,
 			message: null
@@ -318,7 +334,44 @@ var LUISMgr = {
 				reqType.message = TrimAll(item.entity);
 			}
 		}
-		return reqType;
+		if (reqType.contact !== null) {
+			this.transMessage(params, reqType, false);
+		} else {
+			params.callback({text: '对不起，这个功能暂时还没有开放'});
+		}
+	},
+	transMessage: function(params, reqType, isAlarm) {
+		Storage.getUserById(params.job.from).then(function(users) {
+			if (users.length == 1) {
+				if (isAlarm) {
+					reqType.message = users[0].get('username') + '给您设定了一个定时任务，'
+					if (reqType.startdate) {
+						reqType.message += GetTimeStr(reqType.startdate);
+					}
+					if (reqType.enddate) {
+						reqType.message += ' 到 ' + GetTimeStr(reqType.enddate);
+					}
+					if (reqType.message.length > 0) {
+						reqType.message += '， ';
+					}
+					reqType.message += '原话是：【' + reqType.title + '】';
+					
+				} else {
+					reqType.message = users[0].get('username') + '让我告诉您，' + reqType.message;	
+				}
+			}
+			return Storage.getUserByName(reqType.contact);
+		}).then(function(users) {
+			console.log('get user ok', users);
+			if (users.length == 1) {
+				Storage.sendMessage(params.job.to, users[0].id, reqType.message, true);
+				params.callback({text: '好的，您的要求我知道啦'});
+			} else {
+				params.callback({text: '对不起，这个功能暂时还没有开放'});
+			}
+		}, function(error) {
+			console.log('get user ng', error);
+		});
 	}
 	
 }
@@ -333,7 +386,8 @@ var TodoList = {
 	},
 	process() {
 		for (var i=0; i<this.todos.length; i++) {
-			
+			var item = this.todos[i];
+			if (item.done)	continue;
 		}
 	}
 }
