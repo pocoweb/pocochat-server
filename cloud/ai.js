@@ -1,4 +1,14 @@
 ////////////////////////////////////////////////////////////////
+// Usage
+////////////////////////////////////////////////////////////////
+//明天北京的天气怎么样
+//告诉孙立文，明天上午九点到十一点开会
+//明天中午十二点和同学聚餐
+//今天有什么体育新闻（娱乐、国际、科技、政治）
+//告诉黄涵，明天去上海
+//明天去上海
+
+////////////////////////////////////////////////////////////////
 // common functions
 ////////////////////////////////////////////////////////////////
 var Storage = require('./store');
@@ -30,6 +40,10 @@ function GetTimeStr(date) {
 	var str = (date.getMonth()+1) + '月' + date.getDate() + '日 ' + date.getHours() + ':';
 	str += (date.getMinutes() > 9) ? date.getMinutes() : ('0'+date.getMinutes());
 	return str;
+}
+
+function GetDateStr(date) {
+	return (date.getMonth()+1) + '月' + date.getDate() + '日 ';
 }
 
 ////////////////////////////////////////////////////
@@ -92,6 +106,11 @@ const TYPE_TITLE = 'builtin.calendar.title';
 const INTENT_SEND = 'builtin.intent.communication.send_text';
 const TYPE_SENDTO = 'builtin.communication.contact_name';
 const TYPE_MESSAGE = 'builtin.communication.message';
+
+const INTENT_PLACE = 'builtin.intent.places.get_route';
+const TYPE_PLACE_NAME = 'builtin.places.place_name';
+const TYPE_PLACE_DATE = 'builtin.places.date';
+const TYPE_PLACE_LOAC = 'builtin.places.absolute_location';
 
 const INTENT_NONE = 'builtin.intent.none';
 
@@ -167,6 +186,10 @@ var LUISMgr = {
 				console.log('send message');
 				LUISMgr.parseSendMessage(params, data);
 				
+			} else if (intent === INTENT_PLACE) {
+				console.log('place message');
+				LUISMgr.parsePlace(params, data);
+				
 			} else {
 				console.log('unknown');
 				resData.text = '对不起，这个功能暂时还没有开放';
@@ -232,6 +255,14 @@ var LUISMgr = {
 		}
 		return ret;
 	},
+	getWeatherDateNum: function(dstDate) {
+		var curDate = new Date();
+		dstDate.setHours(curDate.getHours());
+		dstDate.setMinutes(curDate.getMinutes());
+		dstDate.setSeconds(curDate.getSeconds());
+		dstDate.setMilliseconds(curDate.getMilliseconds());
+		return (dstDate - curDate) / 86400000;
+	},
 	parseWeather: function(data) {
 		var reqType = {
 			dateNum: null,
@@ -240,14 +271,7 @@ var LUISMgr = {
 		for (var i=0; i<data.entities.length; i++) {
 			var item = data.entities[i];
 			if (item.type == TYPE_WEATHER_DATE) {
-				var dstDate = new Date(item.resolution.date);
-				
-				var curDate = new Date();
-				dstDate.setHours(curDate.getHours());
-				dstDate.setMinutes(curDate.getMinutes());
-				dstDate.setSeconds(curDate.getSeconds());
-				dstDate.setMilliseconds(curDate.getMilliseconds());
-				reqType.dateNum = (dstDate - curDate) / 86400000;
+				reqType.dateNum = getWeatherDateNum(new Date(item.resolution.date));
 			} else if (item.type == TYPE_WEATHER_LOCA) {
 				reqType.city = item.entity;
 			}
@@ -335,6 +359,48 @@ var LUISMgr = {
 		} else {
 			params.callback({text: '对不起，这个功能暂时还没有开放'});
 		}
+	},
+	parsePlace: function(params, data) {
+		var reqType = {
+			contact: null,
+			date: null,
+			location: null,
+			message: null
+		};
+		for (var i=0; i<data.entities.length; i++) {
+			var item = data.entities[i];
+			if (item.type == TYPE_PLACE_NAME) {
+				reqType.contact = TrimAll(item.entity);
+			} else if (item.type == TYPE_PLACE_DATE) {
+				reqType.date = new Date(item.resolution.date);
+			} else if (item.type == TYPE_PLACE_LOAC) {
+				reqType.location = TrimAll(item.entity);
+			}
+		}
+		
+		sync.block(function() {
+			reqType.message = '您的预定行程：';
+			if (reqType.date !== null) {
+				reqType.message += GetDateStr(reqType.date);
+			}
+			if (reqType.location !== null) {
+				reqType.message += '，前往：' + reqType.location;
+			}
+			if (reqType.date !== null && reqType.location !== null) {
+				var url = URL_WEATHER + '&day=' + LUISMgr.getWeatherDateNum(reqType.date) + '&city=' + chinese2Gb2312(reqType.location);
+				var result = sync.wait(sendRequest(url, sync.cb("body")));
+				result = sync.wait(xmlParseString(result.body, sync.cb("err", "json")));
+				reqType.message += '，当地天气情况：' +  LUISMgr.parseWeatherXML(result.json);
+			}
+			
+			if (reqType.location === null) {
+				params.callback({text: '对不起，这个功能暂时还没有开放'});
+			} else if (reqType.contact !== null) {
+				LUISMgr.transMessage(params, reqType, false);
+			} else {
+				params.callback({text: reqType.message});
+			}
+		});
 	},
 	transMessage: function(params, reqType, isAlarm) {
 		Storage.getUserById(params.job.from).then(function(users) {
@@ -430,16 +496,6 @@ var TodoList = {
 	}
 }
 setInterval(TodoList.process, 10000); 
-
-////////////////////////////////////////////////////////////////
-// main
-////////////////////////////////////////////////////////////////
-//var result = null;
-//LUISMgr.request('明天北京的天气怎么样');
-//LUISMgr.request('告诉孙立文，明天上午九点到十一点开会');
-//result = LUISMgr.request('明天中午十二点和同学聚餐');
-//LUISMgr.request('今天有什么体育新闻？');
-//console.log(result);
 
 ////////////////////////////////////////////////////////////////
 // export
