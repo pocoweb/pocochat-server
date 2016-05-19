@@ -1,4 +1,5 @@
 var ParseSession = Parse.Object.extend('Messages');
+var ParseAITodos = Parse.Object.extend('AITodos');
 
 var Storage = {
 	getAIId: function() {
@@ -16,7 +17,7 @@ var Storage = {
 			from: from,
 			to: to,
 			msg: msg,
-			notify: (notify != null) ? notify : false
+			notify: (notify != undefined) ? notify : false
 		}, {
 			success: function(data) {
 				console.log('send session ok', data.get('msg'));
@@ -37,6 +38,28 @@ var Storage = {
 		var userQuery = new Parse.Query('User');
 		userQuery.equalTo('username', name);
 		return userQuery.find();
+	},
+	addAITodo: function(obj) {
+		console.log('add AI todo', obj);
+		var todo = new ParseAITodos();
+		todo.save(obj, {
+			success: function(data) {
+				console.log('add AI todo ok');
+			},
+			error: function(data, error) {
+				console.log('add AI todo ng, with error code: ' + error.description);
+			}
+		});
+	},
+	setAITodo: function(obj) {
+		console.log('set AI todo', obj);
+		obj.save();
+	},
+	getAITodo: function() {
+		console.log('getAITodo');
+		var query = new Parse.Query(ParseAITodos);
+		query.equalTo('done', false);
+		return query.find();
 	}
 }
 

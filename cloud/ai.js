@@ -278,8 +278,9 @@ var LUISMgr = {
 	},
 	parseAlarm: function(params, data) {
 		var reqType = {
+			query: data.query,
 			title: null,
-			contact: null,
+			contact: '',
 			startdate: null,
 			enddate: null
 		};
@@ -313,12 +314,7 @@ var LUISMgr = {
 		if (reqType.title === null) {
 			reqType.title = data.query;
 		}
-		if (reqType.contact !== null) {
-			TodoList.addTodo(reqType);
-			this.transMessage(params, reqType, true);
-		} else {
-			params.callback({text: '对不起，这个功能暂时还没有开放'});
-		}
+		this.transMessage(params, reqType, true);
 		return reqType;
 	},
 	parseSendMessage: function(params, data) {
@@ -343,8 +339,13 @@ var LUISMgr = {
 	transMessage: function(params, reqType, isAlarm) {
 		Storage.getUserById(params.job.from).then(function(users) {
 			if (users.length == 1) {
+				var fromUserName = users[0].get('username');
 				if (isAlarm) {
-					reqType.message = users[0].get('username') + '给您设定了一个定时任务，'
+					if (reqType.contact === '') {
+						reqType.message = '您设定了一个定时任务，';
+					} else {
+						reqType.message = fromUserName + '给您设定了一个定时任务，';
+					}
 					if (reqType.startdate) {
 						reqType.message += GetTimeStr(reqType.startdate);
 					}
@@ -354,43 +355,81 @@ var LUISMgr = {
 					if (reqType.message.length > 0) {
 						reqType.message += '， ';
 					}
-					reqType.message += '原话是：【' + reqType.title + '】';
+					reqType.message += '原话是：【' + reqType.query + '】';
 					
 				} else {
-					reqType.message = users[0].get('username') + '让我告诉您，' + reqType.message;	
+					reqType.message = fromUserName + '让我告诉您，' + reqType.message;	
 				}
 			}
 			return Storage.getUserByName(reqType.contact);
 		}).then(function(users) {
 			console.log('get user ok', users);
-			if (users.length == 1) {
-				Storage.sendMessage(params.job.to, users[0].id, reqType.message, true);
+			if (isAlarm && reqType.contact === '') {
+				params.callback({text: reqType.message});
+				TodoList.addTodo(params, reqType);
+				
+			} else if (users.length === 1) {
 				params.callback({text: '好的，您的要求我知道啦'});
+				Storage.sendMessage(params.job.to, users[0].id, reqType.message, true);
+				if (isAlarm) {
+					TodoList.addTodo(params, reqType);
+				}
+				
 			} else {
 				params.callback({text: '对不起，这个功能暂时还没有开放'});
 			}
 		}, function(error) {
 			console.log('get user ng', error);
+			params.callback({text: '对不起，这个功能暂时还没有开放'});
 		});
 	}
 	
 }
 
 var TodoList = {
-	data: {
-		todos: []
-	},
-	addTodo(mission) {
-		mission.done = false;
-		this.data.todos.push(mission);
+	addTodo(params, mission) {
+		if (mission.contact !== '') {
+			Storage.getUserByName(mission.contact).then(function(users) {
+				console.log('addTodo get user ok', users);
+				if (users.length == 1) {
+					Storage.addAITodo({
+						done: false,
+						to: users[0].id,
+						msg: mission.message,
+						startdate: mission.startdate
+					});
+				}
+			}, function(error) {
+				console.log('addTodo get user ng', error);
+			});
+		} else {
+			Storage.addAITodo({
+				done: false,
+				to: params.job.from,
+				msg: mission.message,
+				startdate: mission.startdate
+			});
+		}
 	},
 	process() {
-		for (var i=0; i<this.todos.length; i++) {
-			var item = this.todos[i];
-			if (item.done)	continue;
-		}
+		Storage.getAITodo().then(function(todos) {
+			console.log('get AI todo ok', todos);
+			for (var i=0; i<todos.length; i++) {
+				var item = todos[i];
+				var currentDate = new Date();
+				if (item.get('startdate').getTime() - currentDate.getTime() < 1800000) 
+				{
+					Storage.sendMessage(Storage.getAIId(), item.get('to'), '【定时提醒】 ' + item.get('msg'), true);
+					item.set('done', true);
+					Storage.setAITodo(item);
+				}
+			}
+		}, function(error) {
+			console.log('get AI todo ng', error);
+		})
 	}
 }
+setInterval(TodoList.process, 10000); 
 
 ////////////////////////////////////////////////////////////////
 // main
