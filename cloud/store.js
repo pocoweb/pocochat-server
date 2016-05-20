@@ -1,14 +1,14 @@
 var ParseSession = Parse.Object.extend('Messages');
 var ParseAITodos = Parse.Object.extend('AITodos');
 
+var L_IS_DEBUG = false;
+
 var Storage = {
 	getAIId: function() {
-		//return 'PhU3ki2QQV';
-		return '1E5T8KLWbF'; 
+        return L_IS_DEBUG ? '1E5T8KLWbF' : 'kEuEOeRLL8';
 	},
 	getGroupId: function() {
-		//return '7SDMDWUPFh';
-		return 'qjm7IQwids'; 
+        return L_IS_DEBUG ? 'qjm7IQwids' : 'rtJkLAuZU9';
 	},
 	sendMessage: function(from, to, msg, notify) {
 		console.log('send message', from, to, msg, notify);
