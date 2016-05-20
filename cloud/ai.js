@@ -489,15 +489,11 @@ var TodoList = {
 			for (var i=0; i<todos.length; i++) {
 				var item = todos[i];
 				var currentDate = new Date();
-				if (item.get('startdate').getTime() - currentDate.getTime() < 300000) 
+				if (item.get('startdate').getTime() - currentDate.getTime() < 1800000) 
 				{
 					Storage.sendMessage(Storage.getAIId(), item.get('to'), '【定时提醒】 ' + item.get('msg'), true);
-					item.set('done', true);
+                    item.set('done', true);
 					Storage.setAITodo(item);
-					
-				} else if (item.get('startdate').getTime() - currentDate.getTime() < 1800000) 
-				{
-					Storage.sendMessage(Storage.getAIId(), item.get('to'), '【定时提醒】 ' + item.get('msg'), true);
 				}
 			}
 		}, function(error) {
