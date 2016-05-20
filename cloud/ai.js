@@ -320,6 +320,12 @@ var LUISMgr = {
 			} else if (item.type == TYPE_STARTTIME) {
 				var time = item.resolution.time;
 				time = time.substr(time.indexOf('T')+1);
+				if (reqType.startdate == null) {
+					reqType.startdate = new Date();
+					reqType.startdate.setMinutes(0);
+					reqType.startdate.setSeconds(0);
+					reqType.startdate.setMilliseconds(0);
+				}
 				reqType.startdate.setHours(parseInt(time));
 				
 			} else if (item.type == TYPE_ENDTIME) {
@@ -479,7 +485,7 @@ var TodoList = {
 	},
 	process() {
 		Storage.getAITodo().then(function(todos) {
-			console.log('get AI todo ok', todos);
+			console.log('get AI todo ok', todos.length);
 			for (var i=0; i<todos.length; i++) {
 				var item = todos[i];
 				var currentDate = new Date();
