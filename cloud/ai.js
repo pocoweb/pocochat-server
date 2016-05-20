@@ -251,7 +251,10 @@ var LUISMgr = {
 		
 		var ret = '';
 		for (var i=0; i<data.value.length; i++) {
-			ret += (i+1) + '. ' + data.value[i].name + '; ';
+			ret += (i+1) + '. ' + data.value[i].name;
+            if (i !== data.value.length-1) {
+                ret += '\n';
+            }
 		}
 		return ret;
 	},
