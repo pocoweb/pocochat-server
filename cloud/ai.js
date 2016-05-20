@@ -276,7 +276,7 @@ var LUISMgr = {
 		for (var i=0; i<data.entities.length; i++) {
 			var item = data.entities[i];
 			if (item.type == TYPE_WEATHER_DATE) {
-				reqType.dateNum = getWeatherDateNum(new Date(item.resolution.date));
+				reqType.dateNum = LUISMgr.getWeatherDateNum(new Date(item.resolution.date));
 			} else if (item.type == TYPE_WEATHER_LOCA) {
 				reqType.city = item.entity;
 			}
