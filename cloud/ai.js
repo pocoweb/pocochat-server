@@ -138,7 +138,9 @@ var LUISMgr = {
 			var intent = LUISMgr.parseIntents(data);
 			if (intent === INTENT_NONE) {
 				var reqType = LUISMgr.parseNewsIntent(data);
-				if (reqType.isNews) {
+                if (reqType.isNews && reqType.category == 'Politics') {
+                    resData.text = '对不起，还不支持此类新闻';
+                } else if (reqType.isNews) {
 					var url = URL_NEWS;
 					if (reqType.category != null) {
 						url += PARAM_NEWS_CATG;
