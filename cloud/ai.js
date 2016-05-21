@@ -138,7 +138,9 @@ var LUISMgr = {
 			var intent = LUISMgr.parseIntents(data);
 			if (intent === INTENT_NONE) {
 				var reqType = LUISMgr.parseNewsIntent(data);
-				if (reqType.isNews) {
+                if (reqType.isNews && reqType.category == 'Politics') {
+                    resData.text = '对不起，还不支持此类新闻';
+                } else if (reqType.isNews) {
 					var url = URL_NEWS;
 					if (reqType.category != null) {
 						url += PARAM_NEWS_CATG;
@@ -251,7 +253,10 @@ var LUISMgr = {
 		
 		var ret = '';
 		for (var i=0; i<data.value.length; i++) {
-			ret += (i+1) + '. ' + data.value[i].name + '; ';
+			ret += (i+1) + '. ' + data.value[i].name;
+            if (i !== data.value.length-1) {
+                ret += '\n';
+            }
 		}
 		return ret;
 	},
@@ -271,7 +276,7 @@ var LUISMgr = {
 		for (var i=0; i<data.entities.length; i++) {
 			var item = data.entities[i];
 			if (item.type == TYPE_WEATHER_DATE) {
-				reqType.dateNum = getWeatherDateNum(new Date(item.resolution.date));
+				reqType.dateNum = LUISMgr.getWeatherDateNum(new Date(item.resolution.date));
 			} else if (item.type == TYPE_WEATHER_LOCA) {
 				reqType.city = item.entity;
 			}
@@ -320,6 +325,12 @@ var LUISMgr = {
 			} else if (item.type == TYPE_STARTTIME) {
 				var time = item.resolution.time;
 				time = time.substr(time.indexOf('T')+1);
+				if (reqType.startdate == null) {
+					reqType.startdate = new Date();
+					reqType.startdate.setMinutes(0);
+					reqType.startdate.setSeconds(0);
+					reqType.startdate.setMilliseconds(0);
+				}
 				reqType.startdate.setHours(parseInt(time));
 				
 			} else if (item.type == TYPE_ENDTIME) {
@@ -479,14 +490,14 @@ var TodoList = {
 	},
 	process() {
 		Storage.getAITodo().then(function(todos) {
-			console.log('get AI todo ok', todos);
+			console.log('get AI todo ok', todos.length);
 			for (var i=0; i<todos.length; i++) {
 				var item = todos[i];
 				var currentDate = new Date();
 				if (item.get('startdate').getTime() - currentDate.getTime() < 1800000) 
 				{
 					Storage.sendMessage(Storage.getAIId(), item.get('to'), '【定时提醒】 ' + item.get('msg'), true);
-					item.set('done', true);
+                    item.set('done', true);
 					Storage.setAITodo(item);
 				}
 			}
