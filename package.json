@@ -9,6 +9,8 @@
   },
   "license": "MIT",
   "dependencies": {
+    "nodemon": "^1.8.1",
+    "docker-links": "^1.0.2",
     "dotenv": "^2.0.0",
     "express": "~4.11.x",
     "iconv-lite": "^0.4.13",
@@ -22,7 +24,8 @@
     "xml2js": "^0.4.16"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "startdocker": "nodemon --watch /parse/cloud index.js"
   },
   "engines": {
     "node": ">=4.3"

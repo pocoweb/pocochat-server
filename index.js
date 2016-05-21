@@ -20,7 +20,10 @@ var api = new ParseServer({
   cloud: process.env.CLOUD_CODE_MAIN || __dirname + '/cloud/main.js',
 
   appId: process.env.APPLICATION_ID || 'pocoweb-chat',
-  masterKey: process.env.REST_API_KEY || '', //Add your master key here. Keep it secret!
+  masterKey: process.env.MASTER_KEY || '', //Add your master key here. Keep it secret!
+  restAPIKey: process.env.REST_API_KEY || '',
+  javascriptKey: process.env.JAVASCRIPT_KEY || '',
+  clientKey: process.env.CLIENT_KEY || '',
   serverURL: process.env.SERVER_URL || 'http://localhost:1337/parse',  // Don't forget to change to https if needed
   liveQuery: {
     classNames: ["Messages", "Posts", "Comments"], // List of classes to support for query subscriptions
@@ -57,15 +60,15 @@ app.get('/test', function(req, res) {
 });
 
 app.all('/oauthproxy', oauthshim);
- 
-// Initiate the shim with Client ID's and secret, e.g. 
+
+// Initiate the shim with Client ID's and secret, e.g.
 oauthshim.init([{
-  // id : secret 
+  // id : secret
   client_id: '90b3f6ed4f34d5c8d1cf',
   client_secret: 'addbad5b3f5b9def6607e3872f56d366cf16cdde',
-  // Define the grant_url where to exchange Authorisation codes for tokens 
+  // Define the grant_url where to exchange Authorisation codes for tokens
   grant_url: 'https://github.com/login/oauth/access_token',
-  // Restrict the callback URL to a delimited list of callback paths 
+  // Restrict the callback URL to a delimited list of callback paths
   domain: 'localhost:8080, localhost:1337'
 }
 ]);
