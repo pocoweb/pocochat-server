@@ -1,14 +1,31 @@
 var ParseSession = Parse.Object.extend('Messages');
 var ParseAITodos = Parse.Object.extend('AITodos');
 
-var L_IS_DEBUG = false;
+var ID_AI = null;
+var ID_GROUP = null;
 
 var Storage = {
+	init: function() {
+		var userQuery = new Parse.Query('User');
+		userQuery.equalTo('username', '智能助手');
+		userQuery.find().then(function(users) {
+			if (users.length == 1) {
+				ID_AI = users[0].id;
+			}
+			userQuery = new Parse.Query('User');
+			userQuery.equalTo('username', '团队群聊');
+			return userQuery.find();
+		}).then(function(users) {
+			if (users.length == 1) {
+				ID_GROUP = users[0].id;
+			}
+		});
+	},
 	getAIId: function() {
-        return L_IS_DEBUG ? '1E5T8KLWbF' : 'kEuEOeRLL8';
+		return (ID_AI !== null) ? ID_AI : 'kEuEOeRLL8';
 	},
 	getGroupId: function() {
-        return L_IS_DEBUG ? 'qjm7IQwids' : 'rtJkLAuZU9';
+		return (ID_GROUP !== null) ? ID_GROUP : 'rtJkLAuZU9';
 	},
 	sendMessage: function(from, to, msg, notify) {
 		console.log('send message', from, to, msg, notify);
@@ -67,3 +84,4 @@ var Storage = {
 // export
 ////////////////////////////////////////////////////////////////
 module.exports = Storage;
+Storage.init();
