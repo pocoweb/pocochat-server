@@ -17,7 +17,7 @@
     "kerberos": "~0.0.x",
     "kue": "^0.11.0",
     "oauth-shim": "^1.1.0",
-    "parse": "~1.8.0",
+    "parse": "~2.15.0",
     "parse-server": "~3.9.0",
     "request": "^2.72.0",
     "simplesync": "0.0.4",
